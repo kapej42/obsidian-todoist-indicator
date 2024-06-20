@@ -1,0 +1,24 @@
+/*
+The main "badge" styles.
+*/
+.nav-files-container .nav-file-title.todoist-indicator .nav-file-title-content:after,
+.nav-files-container .nav-folder-title.todoist-indicator .nav-folder-title-content:after
+{
+	color: white;
+	border-radius: 4px;
+	font-size: 8px;
+	padding: 1px 3px;
+	line-height: 1;
+	margin-left: 4px;
+	top: -2px;
+	position: relative;
+}
+
+/*
+No todoist prpoerty found.
+*/
+.nav-files-container .nav-file-title.todoist-indicator .nav-file-title-content:after,
+.nav-files-container .nav-folder-title.todoist-indicator .nav-folder-title-content:after {
+	content: 'Todoist missing';
+	background-color: #ff5b00;
+}

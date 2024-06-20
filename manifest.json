@@ -1,0 +1,9 @@
+{
+  "id": "todoist-indicator",
+  "name": "Todoist Indicator",
+  "version": "0.1",
+  "description": "Adds a badge to \"project\" files with no defined Todoist project. (based on the GTD indicator from saibotsivad, thanks!",
+  "author": "Kapej42",
+  "authorUrl": "https://www.kapej42.com",
+  "isDesktopOnly": false
+}

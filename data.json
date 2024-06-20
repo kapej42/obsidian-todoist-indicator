@@ -1,0 +1,89 @@
+{
+  "todoistProperty": "todoisttest",
+  "projectsFolderPrefix": "1.Projects/",
+  "projectTag": "#project",
+  "RequireProjectTag": true,
+  "todoistTag": "todoist",
+  "projectFileCache": {
+    "1.Projects/Volgende stap SBS/Volgende stap SBS.md": {
+      "mtime": 1718629633708,
+      "TodoistLink": false
+    },
+    "1.Projects/Tech Tribes - TT Tooling, Implementatie Sales en Admin/Tech Tribes - TT Tooling, Implementatie Sales en Admin.md": {
+      "mtime": 1718629633558,
+      "TodoistLink": false
+    },
+    "1.Projects/Sponsoring DVB/Sponsoring DVB.md": {
+      "mtime": 1718629633556,
+      "TodoistLink": false
+    },
+    "1.Projects/WBSO 2024/WBSO 2024.md": {
+      "mtime": 1718629633445,
+      "TodoistLink": false
+    },
+    "1.Projects/TT Ventures/TT Ventures.md": {
+      "mtime": 1718629633682,
+      "TodoistLink": false
+    },
+    "1.Projects/Reparatie Schade Loods/Reparatie Schade Loods .md": {
+      "mtime": 1718629633541,
+      "TodoistLink": false
+    },
+    "1.Projects/TT VCP/TT VCP.md": {
+      "mtime": 1718629633577,
+      "TodoistLink": false
+    },
+    "1.Projects/TT VCP/Technology roadmap/Technology roadmap.md": {
+      "mtime": 1718629633570,
+      "TodoistLink": false
+    },
+    "1.Projects/TT VCP/Technology roadmap/TT Portfolio.md": {
+      "mtime": 1718629633569,
+      "TodoistLink": false
+    },
+    "1.Projects/TT VCP/Technology roadmap/TT Challengers/TT Challengers.md": {
+      "mtime": 1718629633575,
+      "TodoistLink": false
+    },
+    "1.Projects/Red Hat Partnership/Red Hat Partnership.md": {
+      "mtime": 1718629633532,
+      "TodoistLink": false
+    },
+    "1.Projects/Schiphol Postgres/Schiphol Postgres.md": {
+      "mtime": 1718629633546,
+      "TodoistLink": false
+    },
+    "1.Projects/Mt. Lincolnweg 112/Mt. Lincolnweg 112.md": {
+      "mtime": 1718629633526,
+      "TodoistLink": false
+    },
+    "1.Projects/Pensioen HCS/Pensioen HCS.md": {
+      "mtime": 1718629633530,
+      "TodoistLink": false
+    },
+    "1.Projects/Fysio Schouders en romp/Fysio Schouders en romp.md": {
+      "mtime": 1718629633483,
+      "TodoistLink": false
+    },
+    "1.Projects/Leeuwenburg 2/Leeuwenburg 2.md": {
+      "mtime": 1718629633500,
+      "TodoistLink": false
+    },
+    "1.Projects/Feestje KK 20 jaar/Feestje KK 20 jaar.md": {
+      "mtime": 1718891936951,
+      "TodoistLink": false
+    },
+    "1.Projects/Elements Terschelling/Elements Terschelling.md": {
+      "mtime": 1718886197230,
+      "TodoistLink": true
+    },
+    "1.Projects/Demo Legacy Ontsluiting UWV/Demo Legacy Ontsluiting UWV.md": {
+      "mtime": 1718886158251,
+      "TodoistLink": true
+    },
+    "1.Projects/Artikel GrootSneek/Artikel GrootSneek.md": {
+      "mtime": 1718803702707,
+      "TodoistLink": true
+    }
+  }
+}
