@@ -1,5 +1,5 @@
 {
-  "todoistProperty": "todoisttest",
+  "todoistProperty": "todoist",
   "projectsFolderPrefix": "1.Projects/",
   "projectTag": "#project",
   "RequireProjectTag": true,
