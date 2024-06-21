@@ -82,18 +82,11 @@ function parseYamlValue(value) {
 
 const findTodoistProperty = ( string, todoistProperty ) => {
 
-	console.log("entering findTodoistProperty")
-
 	let hasTodoistProperty = false
 
     const frontMatter = getFrontMatter(string);
 	const hasValue = checkTodoistPropertyHasValue(frontMatter, todoistProperty);
 
-	if (hasValue) {
-		console.log(`Todoist property found with value: ${frontMatter[todoistProperty]}.Returning ${hasValue}`);
-	} else {
-		console.log(`Todoist property is not defined or has no value. Returning ${hasValue}.`);
-	}
 	return hasValue
 }
 
@@ -230,7 +223,6 @@ module.exports = class TodoistLink extends Plugin {
 	}
 
 	scheduleRepaintBadge = (path, clearAll) => {
-		console.log(path)
 		window.setTimeout(() => {
 			const leaves = this.app.workspace.getLeavesOfType('file-explorer')
 			if (leaves?.[0]?.view?.fileItems?.[path]) {
@@ -251,7 +243,6 @@ module.exports = class TodoistLink extends Plugin {
 			const string = await this.app.vault.cachedRead(
 				this.app.vault.getAbstractFileByPath(path)
 			)
-			//console.log("string: "+string)
 
 			const {TodoistLink} = this.settings.projectFileCache[path] || {}
 			this.settings.projectFileCache[path] = this.settings.projectFileCache[path] || {}
@@ -296,7 +287,6 @@ module.exports = class TodoistLink extends Plugin {
 		if (leaves?.length) {
 			const fileItems = leaves[0].view?.fileItems || {}
 			for (const f in fileItems) if (this.isProjectFile(f)) {
-				//console.log(filesMap[f])
 				paintFileBadge(filesMap[f], fileItems[f])
 			}
 		}
