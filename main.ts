@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, parseYaml, getAllTags } from 'obsidian';
 
 interface TodoistIndicatorSettings {
 	tdiSetting: string;
@@ -27,41 +27,6 @@ function getFrontMatter(markdownString: string) {
 	return null;
 }
 
-function parseYaml(yamlContent: string) {
-	const lines = yamlContent.split('\n');
-	const result = {};
-	let currentKey = null;
-
-	lines.forEach(line => {
-		if (line.trim() === '') return;
-
-		const keyValueMatch = line.match(/^(\s*)([^:]+):\s*(.*)$/);
-		if (keyValueMatch) {
-			const indent = keyValueMatch[1].length;
-			const key = keyValueMatch[2].trim();
-			const value = keyValueMatch[3].trim();
-
-			if (indent === 0) {
-				result[key] = parseYamlValue(value);
-				currentKey = key;
-			} else if (indent > 0 && Array.isArray(result[currentKey])) {
-				result[currentKey].push(parseYamlValue(value));
-			}
-		} else if (currentKey && Array.isArray(result[currentKey])) {
-			result[currentKey].push(parseYamlValue(line.trim()));
-		}
-	});
-
-	return result;
-}
-
-function parseYamlValue(value: string) {
-	if (value === 'true') return true;
-	if (value === 'false') return false;
-	if (!isNaN(value)) return parseFloat(value);
-	return value;
-}
-
 const findTodoistProperty = (string: string, todoistProperty: string) => {
 	const frontMatter = getFrontMatter(string);
 	return checkTodoistPropertyHasValue(frontMatter, todoistProperty);
@@ -82,11 +47,9 @@ const clearAllBadges = (fileItem: any) => {
 };
 
 const paintFileBadge = function (this: TodoistIndicatorPlugin, opts: any, fileItem: any) {
-	
-	
 	const slashes = fileItem.file.path.match(/\//g);
 	const fileInFolder = slashes ? slashes.length >= 1 : 0;
-	
+
 	const folderItem = this.app.workspace.getLeavesOfType('file-explorer')[0].view.fileItems[fileItem.file.parent.path];
 
 	const { TodoistLink } = opts || {};
@@ -104,39 +67,13 @@ const paintFileBadge = function (this: TodoistIndicatorPlugin, opts: any, fileIt
 	}
 };
 
-function getFileByPath(filepath: string) {
-	const files = this.app.vault.getFiles();
-	const fileFound = files.find(file => file.path === filepath);
-	if (fileFound) {
-		return fileFound;
-	} else {
-		return "Not a file";
-	}
-}
-
 function containsTag(file: any, tag: string) {
-	const fileCache = this.app.metadataCache.getFileCache(file);
-	if (!fileCache) {
-		console.error(`File cache not found for file: ${file.path}`);
-		return false;
+	if(file){
+		const tags = getAllTags(app.metadataCache.getFileCache(file));
+		return tags.includes(tag);
+	} else {
+		return false
 	}
-
-	const metadata = fileCache.tags?.map((a: any) => a.tag);
-	let containsTagFile = false;
-	if (Array.isArray(metadata)) {
-		containsTagFile = metadata.filter((tg: string) => tg.includes(tag)).length > 0;
-	}
-
-	const frontMatterTags = fileCache.frontmatter?.tags;
-	let containstTagFrontMatter = false;
-
-	const tagWithoutHash = tag.replace('#', '');
-
-	if (Array.isArray(frontMatterTags)) {
-		containstTagFrontMatter = frontMatterTags.filter((tg: string) => tg.includes(tagWithoutHash)).length > 0;
-	}
-
-	return containstTagFrontMatter || containsTagFile;
 }
 
 export default class TodoistIndicatorPlugin extends Plugin {
@@ -144,14 +81,11 @@ export default class TodoistIndicatorPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
-	
 		this.addSettingTab(new SettingTab(this.app, this));
 
 		this.todoistProperty = this.settings.todoistProperty;
 
 		const handleEvent = (event: any, originalFilename: string) => {
-		
-		//KpMa Todo: add handler for files without tags
 			if (!this.isProjectFile(event.path) && (!originalFilename || !this.isProjectFile(originalFilename))) return;
 			this.updateFileCacheAndMaybeRepaintBadge(event, originalFilename).catch(error => {
 				console.error('Error while handling event!', error);
@@ -181,7 +115,8 @@ export default class TodoistIndicatorPlugin extends Plugin {
 	isProjectFile = (filename: string) => {
 
 		let hasProjectTag = false;
-		const file = getFileByPath.call(this, filename);
+
+		const file = this.app.vault.getFileByPath(filename);
 
 		if (file != "Not a file") {
 			hasProjectTag = containsTag.call(this, file, this.settings.projectTag);
@@ -193,7 +128,6 @@ export default class TodoistIndicatorPlugin extends Plugin {
 				&& !filename.includes('/_')
 				&& hasProjectTag;
 		} else {
-			console.log("no")
 			return filename.startsWith(this.settings.projectsFolderPrefix)
 				&& filename.endsWith('.md')
 				&& !filename.includes('/_');
@@ -211,7 +145,6 @@ export default class TodoistIndicatorPlugin extends Plugin {
 	}
 
 	updateFileCacheAndMaybeRepaintBadge = async ({ path, stat, deleted }: any, originalFilename: string) => {
-		
 		if (deleted || !this.isProjectFile(path)) {
 			delete this.settings.projectFileCache[path];
 			delete this.settings.projectFileCache[originalFilename];
@@ -235,6 +168,7 @@ export default class TodoistIndicatorPlugin extends Plugin {
 	}
 
 	refreshAllFileBadges = async () => {
+		
 		const projectFilesList = this.app.vault.getMarkdownFiles().filter(f => this.isProjectFile(f.path));
 		const filesMap: Record<string, any> = {};
 		let needToSave = false;
@@ -278,22 +212,6 @@ export default class TodoistIndicatorPlugin extends Plugin {
 	}
 }
 
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
-	}
-}
-
 class SettingTab extends PluginSettingTab {
 	plugin: TodoistIndicatorPlugin;
 
@@ -306,8 +224,6 @@ class SettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 
 		containerEl.empty();
-
-		containerEl.createEl('h2', { text: 'Todoist Indicator plugin Settings' });
 		containerEl.createEl('p', { text: 'Please reload Obsidian after changing these settings for them to take effect.' });
 
 		new Setting(containerEl)
@@ -336,7 +252,7 @@ class SettingTab extends PluginSettingTab {
 			);
 		
 		new Setting(containerEl)
-			.setName('Require Project Tag?')
+			.setName('Require project tag?')
 			.setDesc('With this setting enabled, badges will only appear on files (and their containing folder) with the project tag.')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.RequireProjectTag)

@@ -6,16 +6,16 @@
   "tdiSetting": "default",
   "projectFileCache": {
     "1.Projects/test.md": {
-      "mtime": 1719497006856,
-      "TodoistLink": true
+      "mtime": 1719512764419,
+      "TodoistLink": false
     },
     "1.Projects/Untitled.md": {
       "mtime": 1719496756604,
       "TodoistLink": false
     },
     "1.Projects/SOmething.md": {
-      "mtime": 1719482744488,
-      "TodoistLink": false
+      "mtime": 1719694395511,
+      "TodoistLink": true
     }
   }
 }
