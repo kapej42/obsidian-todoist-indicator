@@ -10,94 +10,37 @@ interface TodoistIndicatorSettings {
 }
 
 const DEFAULT_SETTINGS: Partial<TodoistIndicatorSettings> = {
+	tdiSetting: 'default',
 	todoistProperty: 'todoist',
 	projectsFolderPrefix: '1.Projects/',
 	projectTag: '#project',
 	RequireProjectTag: true,
-	tdiSetting: 'default',
 	projectFileCache: {}
 };
 
-function getFrontMatter(markdownString: string) {
-	const frontMatterMatch = markdownString.match(/^---\n([\s\S]*?)\n---/);
-	if (frontMatterMatch) {
-		const yamlContent = frontMatterMatch[1];
-		return parseYaml(yamlContent);
-	}
-	return null;
-}
-
-const findTodoistProperty = (string: string, todoistProperty: string) => {
-	const frontMatter = getFrontMatter(string);
-	return checkTodoistPropertyHasValue(frontMatter, todoistProperty);
-};
-
-function checkTodoistPropertyHasValue(frontMatter: any, todoistPropertyName: string) {
-	if (frontMatter && frontMatter.hasOwnProperty(todoistPropertyName)) {
-		const value = frontMatter[todoistPropertyName];
-		if (typeof value === 'string' && value.trim() !== '') {
-			return true;
-		}
-	}
-	return false;
-}
-
-const clearAllBadges = (fileItem: any) => {
-	fileItem.coverEl.removeClass('todoist-indicator');
-};
-
-const paintFileBadge = function (this: TodoistIndicatorPlugin, opts: any, fileItem: any) {
-	const slashes = fileItem.file.path.match(/\//g);
-	const fileInFolder = slashes ? slashes.length >= 1 : 0;
-
-	const folderItem = this.app.workspace.getLeavesOfType('file-explorer')[0].view.fileItems[fileItem.file.parent.path];
-
-	const { TodoistLink } = opts || {};
-
-	if (!TodoistLink) {
-		fileItem.coverEl.addClass('todoist-indicator');
-		if (fileInFolder) {
-			folderItem.coverEl.addClass('todoist-indicator');
-		}
-	} else {
-		clearAllBadges(fileItem);
-		if (fileInFolder) {
-			clearAllBadges(folderItem);
-		}
-	}
-};
-
-function containsTag(file: any, tag: string) {
-	if(file){
-		const tags = getAllTags(app.metadataCache.getFileCache(file));
-		return tags.includes(tag);
-	} else {
-		return false
-	}
-}
-
 export default class TodoistIndicatorPlugin extends Plugin {
 	settings: TodoistIndicatorSettings;
-
+	todoistProperty: string;
+	
 	async onload() {
 		await this.loadSettings();
 		this.addSettingTab(new SettingTab(this.app, this));
 
-		this.todoistProperty = this.settings.todoistProperty;
-
 		const handleEvent = (event: any, originalFilename: string) => {
-			if (!this.isProjectFile(event.path) && (!originalFilename || !this.isProjectFile(originalFilename))) return;
-			this.updateFileCacheAndMaybeRepaintBadge(event, originalFilename).catch(error => {
-				console.error('Error while handling event!', error);
-			});
+			this.refreshFileBadges()
+			return
 		};
 
 		this.registerEvent(this.app.vault.on('delete', handleEvent));
-		this.registerEvent(this.app.vault.on('rename', handleEvent));
+		this.registerEvent(this.app.vault.on('rename',  handleEvent));
 		this.registerEvent(this.app.vault.on('modify', handleEvent));
 
 		this.app.workspace.onLayoutReady(this.initialize.bind(this));
 		this.addSettingTab(new SettingTab(this.app, this));
+	}
+	
+	clearAllBadges = (fileItem: any) => {
+		fileItem.coverEl.removeClass('todoist-indicator');
 	}
 
 	onunload() {
@@ -111,105 +54,104 @@ export default class TodoistIndicatorPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
-
+	
 	isProjectFile = (filename: string) => {
 
 		let hasProjectTag = false;
-
 		const file = this.app.vault.getFileByPath(filename);
 
-		if (file != "Not a file") {
-			hasProjectTag = containsTag.call(this, file, this.settings.projectTag);
-		}
-
+		hasProjectTag = containsTag(this.app, file, this.settings.projectTag);
+		
 		if (Boolean(this.settings.RequireProjectTag)) {
+
 			return filename.startsWith(this.settings.projectsFolderPrefix)
 				&& filename.endsWith('.md')
 				&& !filename.includes('/_')
 				&& hasProjectTag;
+
 		} else {
+
 			return filename.startsWith(this.settings.projectsFolderPrefix)
 				&& filename.endsWith('.md')
 				&& !filename.includes('/_');
 		}
 	}
 
-	scheduleRepaintBadge = (path: string, clearAll: boolean) => {
-		window.setTimeout(() => {
-			const leaves = this.app.workspace.getLeavesOfType('file-explorer');
-			if (leaves?.[0]?.view?.fileItems?.[path]) {
-				if (clearAll) clearAllBadges(leaves[0].view.fileItems[path]);
-				else paintFileBadge.call(this, this.settings.projectFileCache[path], leaves[0].view.fileItems[path]);
-			}
-		});
-	}
-
-	updateFileCacheAndMaybeRepaintBadge = async ({ path, stat, deleted }: any, originalFilename: string) => {
-		if (deleted || !this.isProjectFile(path)) {
-			delete this.settings.projectFileCache[path];
-			delete this.settings.projectFileCache[originalFilename];
-			await this.saveSettings();
-			return this.scheduleRepaintBadge(path, true);
-		}
-		if (!deleted) {
-			const string = await this.app.vault.cachedRead(this.app.vault.getAbstractFileByPath(path));
-
-			const { TodoistLink } = this.settings.projectFileCache[path] || {};
-			this.settings.projectFileCache[path] = this.settings.projectFileCache[path] || {};
-			this.settings.projectFileCache[path].mtime = stat.mtime;
-
-			this.settings.projectFileCache[path].TodoistLink = findTodoistProperty(string, this.todoistProperty);
-
-			await this.saveSettings();
-			if (this.settings.projectFileCache[path].TodoistLink !== TodoistLink) {
-				this.scheduleRepaintBadge(path);
-			}
-		}
-	}
-
-	refreshAllFileBadges = async () => {
+	refreshFileBadges = async () => {
 		
 		const projectFilesList = this.app.vault.getMarkdownFiles().filter(f => this.isProjectFile(f.path));
 		const filesMap: Record<string, any> = {};
+		
 		let needToSave = false;
-
+		let i =  0
+		
 		for (const tFile of projectFilesList) {
+
+			// Populate filesMap with the file path and its metadata, either from cache or a new entry
 			filesMap[tFile.path] = this.settings.projectFileCache[tFile.path] || {
-				mtime: tFile.stat.mtime,
+				mtime: tFile.stat.mtime
 			};
+
 			const lastCache = this.settings.projectFileCache[tFile.path];
 			if (tFile.stat.mtime > (lastCache ? lastCache.mtime : 0)) {
 				needToSave = true;
-				const string = await this.app.vault.cachedRead(tFile);
-				filesMap[tFile.path].TodoistLink = findTodoistProperty(string, this.todoistProperty);
+				const TodoistPropertyValue = this.app.metadataCache.getFileCache(tFile)?.frontmatter[this.settings.todoistProperty];
+				filesMap[tFile.path].TodoistPropertyValue = TodoistPropertyValue;				
 			}
 		}
-
 		for (const path in this.settings.projectFileCache) if (!filesMap[path]) needToSave = true;
+
 		if (needToSave) {
 			this.settings.projectFileCache = filesMap;
 			await this.saveSettings();
 		}
-
+	
 		const leaves = this.app.workspace.getLeavesOfType('file-explorer');
-
 		if (leaves?.length) {
 			const fileItems = leaves[0].view?.fileItems || {};
-			for (const f in fileItems) if (this.isProjectFile(f)) {
-				try {
-					paintFileBadge.call(this, filesMap[f], fileItems[f]);
-				} catch (error) {
-					console.error(`Error painting badge for file: ${f}`, error);
+			for (const f in fileItems) {
+				if (this.isProjectFile(f)) {
+					try {
+						this.paintFileBadge(filesMap[f].TodoistPropertyValue, fileItems[f]);
+					} catch (error) {
+						console.error(`Error painting badge for file: ${f}`, error);
+					}
 				}
 			}
 		}
 	}
 
-	initialize = () => {
-		this.refreshAllFileBadges().catch(error => {
+	initialize = () => {		
+		this.refreshFileBadges().catch(error => {
 			console.error('Unexpected error in "todoist-indicator" plugin initialization.', error);
 		});
 	}
+
+	paintFileBadge = (todoistValue: any, fileItem: any) => {
+
+		// Count the number of slashes in the file path to determine if the file is in a folder
+		const slashes = fileItem.file.path.match(/\//g);
+		const fileInFolder = slashes ? slashes.length >= 1 : 0;
+		// Get the folder item from the file explorer view
+		const folderItem = this.app.workspace.getLeavesOfType('file-explorer')[0].view.fileItems[fileItem.file.parent.path];
+	
+		if (!todoistValue) {
+			// Add a class to indicate the Todoist status on the file item
+			fileItem.coverEl.addClass('todoist-indicator');
+			// If the file is in a folder, add the class to the folder item as well
+			if (fileInFolder) {
+				folderItem.coverEl.addClass('todoist-indicator');
+			}
+		} else {
+			// Clear any existing badges on the file item
+			this.clearAllBadges(fileItem);
+			// If the file is in a folder, clear the badges on the folder item as well
+			if (fileInFolder) {
+				this.clearAllBadges(folderItem);
+			}
+		}
+	}
+	
 }
 
 class SettingTab extends PluginSettingTab {
@@ -249,7 +191,7 @@ class SettingTab extends PluginSettingTab {
 						this.plugin.settings.todoistProperty = value;
 						await this.plugin.saveSettings();
 					})
-			);
+				);
 		
 		new Setting(containerEl)
 			.setName('Require project tag?')
@@ -273,5 +215,19 @@ class SettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+	}
+}
+
+function containsTag(app: App, file: any, tag: string) {
+	if(file){
+		const tags = getAllTags(this.app.metadataCache.getFileCache(file));
+
+		if(tags) { 
+			return tags.includes(tag);
+		} else {
+			return false
+		}
+	} else {
+		return false
 	}
 }
