@@ -24,8 +24,6 @@ export default class TodoistIndicatorPlugin extends Plugin {
 	
 	async onload() {
 		await this.loadSettings();
-		this.addSettingTab(new SettingTab(this.app, this));
-
 		const handleEvent = (event: any, originalFilename: string) => {
 			this.refreshFileBadges()
 			return
