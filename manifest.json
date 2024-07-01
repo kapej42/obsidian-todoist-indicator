@@ -1,7 +1,7 @@
 {
 	"id": "todoist-indicator",
 	"name": "Todoist Indicator",
-	"version": "1.0.0",
+	"version": "1.0.2",
 	"minAppVersion": "1.6.3",
 	"description": "Adds a badge to \"project\" files when they miss a link to a Todoist project. (based on the GTD indicator from saibotsivad, thanks!)",
 	"author": "Kapej42",
