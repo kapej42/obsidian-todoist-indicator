@@ -1,5 +1,7 @@
 import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, parseYaml, getAllTags } from 'obsidian';
 
+const cl = console.log;
+
 interface TodoistIndicatorSettings {
 	tdiSetting: string;
 	todoistProperty: string;
@@ -58,59 +60,72 @@ export default class TodoistIndicatorPlugin extends Plugin {
 		let hasProjectTag = false;
 		const file = this.app.vault.getFileByPath(filename);
 
-		hasProjectTag = containsTag(this.app, file, this.settings.projectTag);
+		hasProjectTag = this.containsTag(this.app, file, this.settings.projectTag);
 		
 		if (Boolean(this.settings.RequireProjectTag)) {
 
 			return filename.startsWith(this.settings.projectsFolderPrefix)
 				&& filename.endsWith('.md')
-				&& !filename.includes('/_')
 				&& hasProjectTag;
 
 		} else {
 
 			return filename.startsWith(this.settings.projectsFolderPrefix)
-				&& filename.endsWith('.md')
-				&& !filename.includes('/_');
+				&& filename.endsWith('.md');
 		}
 	}
+
+	// Helper function to extract frontmatter from file contents
+	// Not working with MetadataCache since it is not representing the real time value
+	// Might be causing performance problems. (todo)
+
+	extractFrontmatter(fileContents) {
+    const frontmatterRegex = /^---\n([\s\S]*?)\n---/;
+    const match = fileContents.match(frontmatterRegex);
+
+    if (match) {
+        try {
+            const frontmatterString = match[1];
+            const frontmatterLines = frontmatterString.split('\n');
+            const frontmatter = {};
+
+            for (const line of frontmatterLines) {
+                const [key, ...valueParts] = line.split(':');
+                const keyTrimmed = key.trim();
+                const value = valueParts.join(':').trim();
+
+                if (keyTrimmed && value) {
+                    frontmatter[keyTrimmed] = value;
+                }
+            }
+
+            return frontmatter;
+        } catch (error) {
+            console.error("Error parsing frontmatter", error);
+            return {};
+        }
+    }
+    return {};
+}
 
 	refreshFileBadges = async () => {
 		
 		const projectFilesList = this.app.vault.getMarkdownFiles().filter(f => this.isProjectFile(f.path));
-		const filesMap: Record<string, any> = {};
-		
 		let needToSave = false;
-		let i =  0
-		
-		for (const tFile of projectFilesList) {
-
-			// Populate filesMap with the file path and its metadata, either from cache or a new entry
-			filesMap[tFile.path] = this.settings.projectFileCache[tFile.path] || {
-				mtime: tFile.stat.mtime
-			};
-
-			const lastCache = this.settings.projectFileCache[tFile.path];
-			if (tFile.stat.mtime > (lastCache ? lastCache.mtime : 0)) {
-				needToSave = true;
-				const TodoistPropertyValue = this.app.metadataCache.getFileCache(tFile)?.frontmatter[this.settings.todoistProperty];
-				filesMap[tFile.path].TodoistPropertyValue = TodoistPropertyValue;				
-			}
-		}
-		for (const path in this.settings.projectFileCache) if (!filesMap[path]) needToSave = true;
-
-		if (needToSave) {
-			this.settings.projectFileCache = filesMap;
-			await this.saveSettings();
-		}
-	
+			
 		const leaves = this.app.workspace.getLeavesOfType('file-explorer');
 		if (leaves?.length) {
 			const fileItems = leaves[0].view?.fileItems || {};
 			for (const f in fileItems) {
 				if (this.isProjectFile(f)) {
 					try {
-						this.paintFileBadge(filesMap[f].TodoistPropertyValue, fileItems[f]);
+						const file = fileItems[f].file;
+						const fileContents = await this.app.vault.read(file);
+						
+						// Assuming the file contains YAML frontmatter
+						const frontmatter = this.extractFrontmatter(fileContents);						
+						this.paintFileBadge(frontmatter[this.settings.todoistProperty], fileItems[f]);
+			
 					} catch (error) {
 						console.error(`Error painting badge for file: ${f}`, error);
 					}
@@ -147,6 +162,23 @@ export default class TodoistIndicatorPlugin extends Plugin {
 			if (fileInFolder) {
 				this.clearAllBadges(folderItem);
 			}
+		}
+	}
+
+	containsTag(app: App, file: any, tag: string) {
+	
+		if(file){
+			const tags = getAllTags(this.app.metadataCache.getFileCache(file));
+			if( tags ) {
+				let bTagPresent = false
+				bTagPresent = tags.some(t => t.startsWith(tag));
+				return bTagPresent;
+			} else { 
+				return false
+			}
+
+		} else { 
+			return false
 		}
 	}
 	
@@ -213,19 +245,5 @@ class SettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
-	}
-}
-
-function containsTag(app: App, file: any, tag: string) {
-	if(file){
-		const tags = getAllTags(this.app.metadataCache.getFileCache(file));
-
-		if(tags) { 
-			return tags.includes(tag);
-		} else {
-			return false
-		}
-	} else {
-		return false
 	}
 }
