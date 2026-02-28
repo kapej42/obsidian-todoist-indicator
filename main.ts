@@ -33,11 +33,6 @@ export default class TodoistIndicatorPlugin extends Plugin {
 		this.addSettingTab(new SettingTab(this.app, this));
 	}
 
-	clearAllBadges = (fileItem: any) => {
-		this.log("removing class over", fileItem);
-		fileItem.coverEl.removeClass('todoist-indicator');
-	}
-
 	getViewFileItems() {
 		// Load file ites in file explorer view
 		const leaves = this.app.workspace.getLeavesOfType('file-explorer');
@@ -58,20 +53,14 @@ export default class TodoistIndicatorPlugin extends Plugin {
 	}
 
 	isProjectFile = (file: TFile) => {
-		this.log(`check if is file: ${file.path}`)
-
 		const hasProjectTag = this.containsTag(file, this.settings.projectTag);
 
 		if (Boolean(this.settings.RequireProjectTag)) {
-
-			this.log(`require project tag over file ${file.path}`)
-
 			return file.path.startsWith(this.settings.projectsFolderPrefix)
 				&& file.path.endsWith('.md')
 				&& hasProjectTag;
 
 		} else {
-			this.log(`dont require project tag over file ${file.path}`)
 			return file.path.startsWith(this.settings.projectsFolderPrefix)
 				&& file.path.endsWith('.md');
 		}
@@ -80,12 +69,9 @@ export default class TodoistIndicatorPlugin extends Plugin {
 	refreshFileBadges = async (file: TFile) => {
 		if (!file) return;
 
-		this.log(`refreshing badge over ${file.path}`);
-
 		const fileItems = this.getViewFileItems()
 		const fileItem = fileItems[file.path];
 
-		this.log("processing refreshing over", fileItem)
 		try {
 			await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
 				this.paintFileBadge(frontmatter[this.settings.todoistProperty], fileItem);
@@ -126,8 +112,6 @@ export default class TodoistIndicatorPlugin extends Plugin {
 
 		const cachedFile = this.app.metadataCache.getFileCache(file);
 		const tags = cachedFile ? getAllTags(cachedFile) : [];
-
-		this.log(`file tag validation | file: ${file.name} | tag: ${tag} | file tags:`, tags)
 
 		return tags?.some(t => t.startsWith(tag))
 	}
