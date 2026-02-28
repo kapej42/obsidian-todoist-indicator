@@ -67,8 +67,6 @@ export default class TodoistIndicatorPlugin extends Plugin {
 	}
 
 	refreshFileBadge = async (file: TFile) => {
-		if (!file) return;
-
 		const fileItems = this.getViewFileItems()
 		const fileItem = fileItems[file.path];
 
