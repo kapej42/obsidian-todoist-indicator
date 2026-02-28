@@ -88,6 +88,15 @@ export default class TodoistIndicatorPlugin extends Plugin {
 			.catch(e => this.error("error initializing all files", e));
 	}
 
+	resetAllFiles = () => {
+		const projectFiles = this.app.vault.getFiles();
+
+		Promise
+			.all(projectFiles
+				.map(f => this.refreshFileBadge(f)))
+			.catch(e => this.error("error initializing all files", e));
+	}
+
 	paintFileBadge = (todoistValue: any, fileItem: any) => {
 
 		// Count the number of slashes in the file path to determine if the file is in a folder
@@ -96,7 +105,7 @@ export default class TodoistIndicatorPlugin extends Plugin {
 
 		// deterime if the indicator should be shown or not
 		const shouldShowIndicator = !Boolean(todoistValue) && this.isProjectFile(fileItem.file);
-		
+
 		// class would be applied or not depending on the flag calculated
 		fileItem.coverEl.toggleClass('todoist-indicator', shouldShowIndicator);
 		if (fileInFolder) {
@@ -147,6 +156,7 @@ class SettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.projectsFolderPrefix = value;
 						await this.plugin.saveSettings();
+						this.plugin.resetAllFiles();
 					})
 			);
 		new Setting(containerEl)
@@ -159,6 +169,7 @@ class SettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.todoistProperty = value;
 						await this.plugin.saveSettings();
+						this.plugin.resetAllFiles();
 					})
 			);
 
@@ -170,6 +181,7 @@ class SettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.RequireProjectTag = value;
 					await this.plugin.saveSettings();
+					this.plugin.resetAllFiles();
 				})
 			);
 		new Setting(containerEl)
@@ -182,6 +194,7 @@ class SettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.projectTag = value;
 						await this.plugin.saveSettings();
+						this.plugin.resetAllFiles();
 					})
 			);
 	}
