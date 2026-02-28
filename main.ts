@@ -25,9 +25,9 @@ export default class TodoistIndicatorPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		this.registerEvent(this.app.vault.on('delete', this.refreshFileBadges));
-		this.registerEvent(this.app.vault.on('rename', this.refreshFileBadges));
-		this.registerEvent(this.app.vault.on('modify', this.refreshFileBadges));
+		this.registerEvent(this.app.vault.on('delete', this.refreshFileBadge));
+		this.registerEvent(this.app.vault.on('rename', this.refreshFileBadge));
+		this.registerEvent(this.app.vault.on('modify', this.refreshFileBadge));
 
 		this.app.workspace.onLayoutReady(this.initialize.bind(this));
 		this.addSettingTab(new SettingTab(this.app, this));
@@ -66,7 +66,7 @@ export default class TodoistIndicatorPlugin extends Plugin {
 		}
 	}
 
-	refreshFileBadges = async (file: TFile) => {
+	refreshFileBadge = async (file: TFile) => {
 		if (!file) return;
 
 		const fileItems = this.getViewFileItems()
@@ -86,7 +86,7 @@ export default class TodoistIndicatorPlugin extends Plugin {
 
 		Promise
 			.all(projectFiles
-				.map(f => this.refreshFileBadges(f)))
+				.map(f => this.refreshFileBadge(f)))
 			.catch(e => this.error("error initializing all files", e));
 	}
 
